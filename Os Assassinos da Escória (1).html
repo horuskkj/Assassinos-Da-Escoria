@@ -1,0 +1,865 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Os Assassinos da Escória</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Special+Elite&display=swap">
+<style>
+/* Layout: dossiê militar escuro. Tela inicial = arquivo com 4 fichas + rolador livre.
+   Ficha = faixa de recursos no topo, abas por área, painel de última rolagem fixo embaixo. */
+:root{
+  --bg:#11130e; --panel:#191c14; --panel2:#21251a; --line:#383d2c;
+  --ink:#e8e0c8; --ink2:#a8a38c; --stamp:#b03e2b; --stamp-ink:#e8806a;
+  --brass:#c9ab5a; --ok:#9bbb74; --warn:#dcaa42; --bad:#e0624c; --focus:#f0d27a;
+  --display:'Special Elite','Courier New',monospace;
+  --body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);margin:0;
+  padding-block:18px 150px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
+h1{font-size:clamp(26px,6vw,40px);line-height:1.1;letter-spacing:.02em}
+h2{font-size:20px}
+h3{font-size:17px}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.label{font:500 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink2)}
+.muted{color:var(--ink2)}
+.small{font-size:13px}
+.mono{font-family:var(--mono)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.grow{flex:1 1 0;min-width:0}
+.panel{background:var(--panel);border:1px solid var(--line);padding:14px 16px;min-width:0}
+.panel>.label:first-child{display:block;margin-bottom:10px}
+.btn{border:1px solid var(--line);background:var(--panel2);padding:8px 12px;min-height:40px;font-weight:600;font-size:14px;cursor:pointer;border-radius:2px}
+.btn:hover:not(:disabled){border-color:var(--brass)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--stamp);border-color:var(--stamp);color:#fff}
+.btn.primary:hover:not(:disabled){background:#c24a36;border-color:#c24a36}
+.btn.ghost{background:transparent}
+a.btn{color:var(--ink)}
+.btn.sm{min-height:34px;padding:5px 10px;font-size:13px}
+.chip{border:1px solid var(--line);background:transparent;padding:4px 10px;min-height:34px;font:500 13px var(--mono);cursor:pointer;border-radius:2px}
+.chip[aria-pressed="true"]{background:var(--brass);color:#14130b;border-color:var(--brass)}
+input[type=number],input[type=text],select,textarea{background:#0d0f0a;border:1px solid var(--line);padding:7px 9px;min-height:40px;border-radius:2px;width:100%;min-width:0}
+textarea{resize:vertical;min-height:90px}
+input[type=checkbox]{width:18px;height:18px;accent-color:var(--brass)}
+.die{display:inline-block;font:600 12px var(--mono);border:1px solid var(--brass);color:var(--brass);padding:1px 6px;border-radius:2px;white-space:nowrap}
+
+/* topo */
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;border-bottom:2px solid var(--line);padding-bottom:12px}
+.stamp{font:400 12px var(--display);letter-spacing:.25em;color:var(--stamp-ink);border:1.5px solid var(--stamp);padding:3px 9px;transform:rotate(-2deg);display:inline-block}
+.eyebrow{font:500 11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ink2)}
+.switch{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer}
+
+/* home */
+.files{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px}
+.file{display:flex;flex-direction:column;gap:10px;text-align:left;background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--brass);padding:14px 16px;cursor:pointer;color:var(--ink);text-decoration:none}
+.file:hover{border-color:var(--brass)}
+.file .nm{font:400 20px var(--display);line-height:1.2}
+.file .dice{display:flex;gap:6px;flex-wrap:wrap}
+.kv{display:flex;gap:12px;flex-wrap:wrap}
+.kv b{font-family:var(--mono);font-weight:600}
+
+/* faixa de recursos */
+.vitals{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.tile{background:var(--panel);border:1px solid var(--line);padding:10px 12px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.tile .big{font:600 24px var(--mono);line-height:1.1}
+.stepper{display:flex;gap:4px;align-items:stretch}
+.stepper input{text-align:center;font:600 18px var(--mono);padding:4px}
+.stepper button{width:38px;flex:none;border:1px solid var(--line);background:var(--panel2);font-size:18px;cursor:pointer;border-radius:2px}
+.stepper button:hover{border-color:var(--brass)}
+.banner{border:1px solid var(--stamp);background:rgba(176,62,43,.16);padding:10px 14px;font-size:14px}
+.banner.warn{border-color:var(--warn);background:rgba(220,170,66,.12)}
+
+/* abas */
+.tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--line);scrollbar-width:thin}
+.tab{flex:none;background:transparent;border:1px solid transparent;border-bottom:none;padding:9px 14px;font:500 12px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);cursor:pointer;min-height:40px}
+.tab[aria-selected="true"]{background:var(--panel);border-color:var(--line);color:var(--ink);box-shadow:inset 0 2px 0 var(--stamp)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr));gap:16px;align-items:start}
+.stack{display:flex;flex-direction:column;gap:16px;min-width:0}
+
+/* atributos */
+.attrs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.attr{border:1px solid var(--line);padding:10px;text-align:center;background:var(--panel2)}
+.attr .d{font:600 28px var(--mono);color:var(--brass)}
+.attr select{text-align:center}
+
+/* perícias */
+.cfg{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.skg{margin-bottom:6px}
+.skill{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.skill .nm{font-weight:600}
+.skill .ds{font-size:12.5px;color:var(--ink2);line-height:1.35}
+.skill select{width:auto;min-height:34px}
+
+/* habilidades e itens */
+.card{border:1px solid var(--line);background:var(--panel2);padding:12px 14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.card h3{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
+.cost{font:600 13px var(--mono);color:var(--brass)}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field>span{font:500 11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink2)}
+.meter{height:10px;background:#0d0f0a;border:1px solid var(--line)}
+.meter>i{display:block;height:100%;background:var(--brass)}
+.meter.over>i{background:var(--bad)}
+.item{display:grid;grid-template-columns:minmax(0,1.2fr) 92px minmax(0,1.6fr) auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+@media (max-width:640px){.item{grid-template-columns:1fr 92px}.item .idesc{grid-column:1/-1}.item .irm{grid-column:2;justify-self:end}}
+.pips{display:flex;gap:8px}
+.pip{width:34px;height:34px;border:2px solid var(--brass);border-radius:50%;background:var(--brass)}
+.pip.off{background:transparent;opacity:.4}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:6px 8px;border-top:1px solid var(--line);vertical-align:top}
+th{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);border-top:none}
+.scroll{overflow-x:auto}
+
+/* roller */
+.dicegrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:8px}
+.dtype{border:1px solid var(--line);background:var(--panel2);padding:8px;display:flex;flex-direction:column;gap:6px;align-items:center}
+.dtype.on{border-color:var(--brass)}
+.dtype .dn{font:600 20px var(--mono)}
+
+/* dados no resultado */
+.dv{width:46px;height:46px;display:grid;place-items:center;border:1.5px solid var(--ink2);font:600 21px var(--mono);position:relative;background:#0d0f0a}
+.dv small{position:absolute;top:1px;left:4px;font:500 9px var(--mono);color:var(--ink2)}
+.dv.max{border-color:var(--brass);color:var(--brass)}
+.dv.one{border-color:var(--bad);color:var(--bad)}
+.dv.drop{opacity:.35;text-decoration:line-through}
+.dice{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.op{font:500 18px var(--mono);color:var(--ink2)}
+.total{font:600 34px var(--mono);line-height:1}
+.badge{display:inline-block;font:600 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border:1px solid;border-radius:2px}
+.badge.ok{color:var(--ok);border-color:var(--ok)}
+.badge.tie{color:var(--warn);border-color:var(--warn)}
+.badge.bad{color:var(--bad);border-color:var(--bad)}
+.badge.crit{background:var(--brass);color:#14130b;border-color:var(--brass)}
+.badge.fumble{background:var(--bad);color:#1a0b07;border-color:var(--bad)}
+
+#dock{position:fixed;left:0;right:0;bottom:0;z-index:20;background:#0a0c07;border-top:2px solid var(--brass);
+  padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));max-height:46vh;overflow:auto}
+#dock[hidden]{display:none}
+.dock-in{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dock-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.pop{animation:pop .28s ease-out}
+@keyframes pop{from{transform:translateY(8px);opacity:.3}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.pop{animation:none}}
+
+/* histórico */
+.log{display:flex;flex-direction:column}
+.log>div{display:grid;grid-template-columns:48px 1fr;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:13.5px}
+.log .t{font:400 12px var(--mono);color:var(--ink2)}
+
+/* modal */
+#modal{position:fixed;inset:0;z-index:30;background:rgba(5,6,3,.82);display:flex;align-items:flex-start;justify-content:center;padding:20px 12px;overflow:auto}
+#modal[hidden]{display:none}
+.sheet{background:var(--panel);border:1px solid var(--brass);max-width:560px;width:100%;padding:16px;display:flex;flex-direction:column;gap:12px}
+</style>
+
+<div class="wrap" id="app"></div>
+<div id="dock" hidden></div>
+<div id="modal" hidden></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ================= Regras do manual ================= */
+var STEPS=[4,6,8,10,12];
+var AT={fis:'Físico',men:'Mente',emo:'Emoção'};
+// [id, nome, atributo padrão, uso comum]  (manual 2.2)
+var SK=[
+ ['atualidades','Atualidades','men','Conhecer acontecimentos, política, costumes e informações gerais do período.'],
+ ['ciencia','Ciência','men','Conhecimento científico e compreensão de fenômenos.'],
+ ['investigacao','Investigação','men','Encontrar pistas, cruzar documentos e reconstruir acontecimentos.'],
+ ['medicina','Medicina','men','Prestar cuidados fictícios de emergência e estabilizar aliados no sistema.'],
+ ['percepcao','Percepção','men','Notar detalhes, mudanças no ambiente e sinais que passaram despercebidos.'],
+ ['tecnologia','Tecnologia','men','Compreender e operar dispositivos e sistemas representados de forma abstrata no jogo.'],
+ ['pilotagem','Pilotagem','men','Conduzir veículos dentro das situações narrativas da campanha.'],
+ ['sobrevivencia','Sobrevivência','men','Orientar-se, manter-se em ambientes difíceis e improvisar recursos cotidianos.'],
+ ['vontade','Vontade','men','Manter o foco, resistir à pressão e sustentar uma decisão difícil.'],
+ ['atletismo','Atletismo','fis','Correr, saltar, escalar e realizar esforços físicos.'],
+ ['furtividade','Furtividade','fis','Passar despercebido em uma cena fictícia, sem transformar isso em instrução real.'],
+ ['cac','Combate Corpo a Corpo','fis','Resolver confrontos físicos próximos dentro das regras do jogo.'],
+ ['adi','Combate à Distância','fis','Resolver ataques fictícios à distância por meio de rolagens abstratas.'],
+ ['manuseio','Manuseio','fis','Manipular objetos, ferramentas e equipamentos de cena.'],
+ ['prontidao','Prontidão','fis','Reagir rapidamente, perceber perigo imediato e determinar iniciativa.'],
+ ['intuicao','Intuição','emo','Perceber emoções, intenções e contradições em uma conversa.'],
+ ['intimidacao','Intimidação','emo','Pressionar alguém por meio da presença e da postura do personagem.'],
+ ['influencia','Influência','emo','Convencer, negociar, inspirar ou conquistar confiança.']
+];
+var SKM={};SK.forEach(function(s){SKM[s[0]]=s});
+var DTS=[[4,'Simples'],[6,'Comum'],[8,'Exigente'],[10,'Difícil'],[13,'Muito difícil'],[16,'Excepcional']];
+var PROT=[[0,'Nenhuma'],[1,'Leve'],[2,'Reforçada'],[3,'Especial']];
+var DANO=[['improv','Improvisado ou muito leve',1,4],['padrao','Padrão',1,6],['alto','Impacto elevado',2,4],['prec','Precisão ou especialidade',2,6],['area','Efeito de área cinematográfico',2,6]];
+var FREE_DICE=[4,6,8,10,12,20];
+
+function pvMax(c){return 20+c.attrs.fis}
+function detMax(c){return 10+c.attrs.emo}
+function defFixa(c){return 5+c.protecao+(c.cobertura?2:0)}
+function stepIdx(d){return STEPS.indexOf(d)}
+
+/* ================= Personagens (manual cap. 7) ================= */
+function ab(id,nome,custo,desc,o){o=o||{};o.id=id;o.nome=nome;o.custo=custo;o.desc=desc;return o}
+function mk(o){
+  var sk={};SK.forEach(function(s,i){sk[s[0]]=o.sk[i]});
+  return {id:o.id,nome:o.nome,jogador:o.jogador,idade:o.idade,origem:o.origem,funcao:o.funcao,
+    resumo:o.resumo,personalidade:o.personalidade,qualidade:o.qualidade,defeito:o.defeito,medo:o.medo,objetivo:o.objetivo,
+    attrs:{fis:o.at[0],men:o.at[1],emo:o.at[2]},skills:sk,
+    pv:20+o.at[0],det:10+o.at[2],municao:o.mun,municaoMax:o.mun,protecao:o.prot,pa:0,bolsas:1,recursos:0,
+    abilities:o.abs,items:o.items.map(function(it,i){return {id:'i'+i,nome:it[0],esp:it[1],desc:it[2]||''}}),
+    notes:'',conds:'',acoes:3,cobertura:false,subiu:{fis:false,men:false,emo:false},used:{}};
+}
+var DEFAULTS={
+ antoni:mk({id:'antoni',nome:'Antoni Nowak',jogador:'Benicio',idade:'25 anos',origem:'Polônia',
+  funcao:'Estrategista, investigador e planejador.',
+  resumo:'Sobrevivente polonês. Sua família foi perseguida pelos nazistas; o pai foi executado e a mãe e a irmã foram deportadas. Foi capturado, conseguiu escapar e ajudou outros prisioneiros a fugir antes de chegar aos Estados Unidos. Seu valor está em observar, cruzar informações, antecipar consequências e perceber quando uma situação não é o que parece.',
+  personalidade:'Calculista, atento, reservado e muito leal quando confia em alguém.',qualidade:'Consegue enxergar conexões que os outros ignoram.',defeito:'Pode tratar pessoas como peças de um plano.',medo:'Perder mais alguém por uma decisão errada.',
+  objetivo:'Descobrir o que aconteceu com sua mãe e sua irmã e impedir que outras famílias desapareçam sem registro.',
+  at:[6,8,8],mun:6,prot:1,
+  sk:[8,6,10,6,10,6,4,8,8, 4,6,6,4,6,6, 8,4,8],
+  abs:[
+   ab('a1','Leitura de Cenário',4,'Uma vez por cena, Antoni observa o ambiente e faz um teste de Percepção ou Investigação. Em sucesso, o mestre revela uma pista útil, uma contradição ou um risco que já esteja presente na cena. Em falha, ele ainda percebe algo, mas não consegue interpretar a tempo.',{teste:'Percepção ou Investigação',once:'cena',rolls:[{skill:'percepcao'},{skill:'investigacao'}]}),
+   ab('a2','Plano de Reserva',5,'Antoni pode preparar um aliado com uma orientação curta. O aliado recebe +2 no próximo teste que esteja diretamente ligado ao plano.',{limit:'Não pode ser usada para criar recursos que o grupo não possui.'})],
+  items:[['Mapa dobrado',1],['Caderno de anotações',1],['Documentos de identidade',1],['Bússola',1]]}),
+ julius:mk({id:'julius',nome:'Julius Rutherford',jogador:'Miguel',idade:'25 anos',origem:'Europa Central (origem nacional não definida)',
+  funcao:'Reconhecimento, discrição e prontidão.',
+  resumo:'Sobrevivente de 25 anos. Sua família foi levada para um campo de concentração enquanto ele estava fora de casa; os parentes esconderam sua existência para tentar salvar sua vida. Reagiu por impulso, foi capturado, libertado por resistentes e fugiu para os Estados Unidos. Entrou para o Exército porque decidiu que não queria passar o resto da vida apenas fugindo.',
+  personalidade:'Observador, desconfiado, irônico quando está confortável e impulsivo quando o passado retorna.',qualidade:'Percebe perigo antes de muita gente.',defeito:'Prefere desaparecer a pedir ajuda.',medo:'Ser capturado novamente e perder a própria liberdade.',
+  objetivo:'Descobrir o destino da família e decidir se ainda é possível construir algo além da fuga.',
+  at:[8,8,6],mun:6,prot:1,
+  sk:[4,4,6,4,8,4,4,8,8, 8,10,6,6,8,10, 8,6,4],
+  abs:[
+   ab('a1','Passo Silencioso',4,'Quando uma cena exigir deslocamento discreto, Julius pode repetir um dos dados de Furtividade e escolher o melhor resultado.',{limit:'Não o torna invisível e não ignora obstáculos narrativos.',teste:'Furtividade',rolls:[{skill:'furtividade',best:true}]}),
+   ab('a2','Reação Imediata',3,'Uma vez por combate, Julius pode agir antes de um adversário que acabou de revelar uma ameaça próxima, desde que ainda não tenha gasto suas ações naquele turno. A ação precisa ser simples e plausível.',{once:'combate'})],
+  items:[['Documentos falsos',1],['Cantil',1],['Lanterna',1],['Lenço',1],['Item pessoal da família',1]]}),
+ jim:mk({id:'jim',nome:'Jim Rosenfeld',jogador:'Baiano',idade:'26 anos (definida para esta edição)',origem:'Alemanha',
+  funcao:'Combate direto, intimidação e comunicação em alemão.',
+  resumo:'Judeu alemão que perdeu a família durante a perseguição nazista. Escapou de um grupo liderado por Otto Fischer e depois buscou vingança contra pessoas ligadas aos responsáveis pela tragédia. Essa escolha deixou marcas e terá consequências. Chegou aos Estados Unidos escondido em um navio de carga e entrou para o Exército para voltar à Europa. É o único do grupo que fala alemão fluentemente.',
+  personalidade:'Intenso, franco, impulsivo e protetor com quem considera parte do grupo.',qualidade:'Encara situações que os outros preferem evitar.',defeito:'Pode confundir justiça com vingança.',medo:'Descobrir que sua vida passou a ser definida pelo que perdeu.',
+  objetivo:'Enfrentar Otto Fischer e impedir que a organização dele continue agindo.',
+  at:[8,6,8],mun:8,prot:2,
+  sk:[4,4,6,4,6,4,6,6,8, 8,4,10,8,8,8, 6,10,6],
+  abs:[
+   ab('a1','Presença Ameaçadora',4,'Jim faz Intimidação + Emoção. Em sucesso, o alvo hesita, recua ou revela uma reação.',{limit:'Não obriga alguém a entregar informação verdadeira nem funciona automaticamente contra fanáticos ou pessoas sem medo.',teste:'Intimidação + Emoção',rolls:[{skill:'intimidacao',attr:'emo'}]}),
+   ab('a2','Pressão',5,'Jim concentra a atenção em um alvo e recebe +2 no próximo teste de Combate Corpo a Corpo ou Combate à Distância.',{limit:'Se falhar, perde a oportunidade da pressão e não recupera o custo.'}),
+   ab('t1','Traço especial: Alemão fluente',0,'Jim fala alemão com fluência. Em situações de conversa, leitura cotidiana ou identificação de expressões, não precisa rolar apenas para compreender o idioma.',{limit:'Para imitar sotaques, interpretar documentos complexos ou convencer alguém em uma conversa delicada, ainda pode ser exigido um teste.',trait:true})],
+  items:[['Documentos falsos',1],['Cantil',1],['Kit médico',1,'Kit médico de jogo: recupera 1d6 PV, uma vez por cena, sem ultrapassar o máximo.'],['Item pessoal da família',1]]}),
+ ben:mk({id:'ben',nome:'Benjamin “Ben” Dreyfus',jogador:'Andrew',idade:'24 anos (definida para esta edição)',origem:'França, sul do país',
+  funcao:'Precisão, observação e solução técnica abstrata.',
+  resumo:'Francês de 24 anos. Sua família vivia de uma fazenda no sul da França e foi escondida por vizinhos durante a ocupação. Depois que os nazistas descobriram o esconderijo, ele escapou, mudou de identidade e abriu um cinema. Um ataque planejado por ele atingiu um grande grupo de integrantes nazistas, mas Friedrich von Eisenberg sobreviveu. Fugiu para os Estados Unidos e entrou para o Exército.',
+  personalidade:'Criativo, determinado e atento a detalhes, mas pode se fechar quando o assunto é sua família.',qualidade:'Consegue manter a calma quando precisa observar e escolher o momento certo.',defeito:'Pode tratar uma decisão arriscada como se fosse a única solução.',medo:'Falhar novamente quando alguém depende dele.',
+  objetivo:'Enfrentar Friedrich e descobrir o que restou das pessoas que o ajudaram a sobreviver.',
+  at:[6,8,6],mun:8,prot:1,
+  sk:[6,8,8,4,8,8,4,6,6, 4,6,6,10,10,8, 6,4,8],
+  abs:[
+   ab('a1','Ponto de Observação',4,'Quando Ben consegue um momento para observar a cena, faz Percepção + Mente. Em sucesso, identifica uma abertura, uma mudança ou um detalhe que permite a ele ou a um aliado receber +2 no próximo teste relacionado.',{limit:'Não revela informações que não estejam disponíveis na cena.',teste:'Percepção + Mente',rolls:[{skill:'percepcao',attr:'men'}]}),
+   ab('a2','Interrupção',6,'Ben pode usar um dispositivo de cena previamente estabelecido pelo mestre para provocar uma distração ou interromper temporariamente uma situação. O efeito é resolvido por um teste de Manuseio ou Tecnologia contra DT definida pelo contexto.',{req:'Dispositivo de cena previamente estabelecido pelo mestre.',limit:'Não descreve construção ou uso real de dispositivos perigosos.',teste:'Manuseio ou Tecnologia',rolls:[{skill:'manuseio'},{skill:'tecnologia'}]})],
+  items:[['Documentos falsos',1],['Caderno de desenhos',1],['Ferramenta genérica',1],['Cantil',1],['Lembrança da família',1]]})
+};
+var ORDER=['antoni','julius','jim','ben'];
+
+/* ================= Estado e persistência ================= */
+var KEY='oae1:';
+function lsGet(k){try{return localStorage.getItem(KEY+k)}catch(e){return null}}
+function lsSet(k,v){try{localStorage.setItem(KEY+k,v)}catch(e){}}
+function clone(o){return JSON.parse(JSON.stringify(o))}
+function loadChar(id){
+  var base=clone(DEFAULTS[id]),raw=lsGet('c:'+id);
+  if(!raw)return base;
+  try{var s=JSON.parse(raw);for(var k in s){base[k]=s[k]}}catch(e){}
+  return base;
+}
+var chars={};ORDER.forEach(function(id){chars[id]=loadChar(id)});
+var log=[];try{log=JSON.parse(lsGet('log')||'[]')}catch(e){log=[]}
+var ui={tab:'ficha',master:false,cfg:{dt:'',bonus:0,attr:''},atk:{skill:'cac',target:'',ammo:0,bonus:0,cat:'padrao'},
+  roller:{c:{4:0,6:1,8:0,10:0,12:0,20:0},bonus:0,dt:'',label:''},def:{atk:''},last:null,modal:null,msg:'',confirmReset:false,showLog:false};
+function saveChar(c){lsSet('c:'+c.id,JSON.stringify(c))}
+function saveLog(){lsSet('log',JSON.stringify(log.slice(-120)))}
+
+/* ================= Dados ================= */
+function rnd(n){
+  try{var a=new Uint32Array(1),lim=Math.floor(4294967296/n)*n,x;do{crypto.getRandomValues(a);x=a[0]}while(x>=lim);return x%n+1}
+  catch(e){return Math.floor(Math.random()*n)+1}
+}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]})}
+function nowStr(){return new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}
+function pushLog(e){e.t=nowStr();log.push(e);ui.last=e;saveLog()}
+function num(v,d){var n=parseInt(v,10);return isNaN(n)?d:n}
+
+function testRoll(c,sid,o){
+  o=o||{};
+  var sk=SKM[sid],ak=o.attr||sk[2],dS=c.skills[sid],dA=c.attrs[ak];
+  var a=rnd(dS),b=rnd(dA);
+  var bonus=o.bonus||0;
+  var e={kind:'test',who:c.nome,label:o.label||(sk[1]+' + '+AT[ak]),
+    caption:sk[1]+' d'+dS+' + '+AT[ak]+' d'+dA,
+    parts:[{d:dS,v:a},{d:dA,v:b}],bonus:bonus,dt:(o.dt===''||o.dt==null)?null:o.dt,ctx:o.ctx||'test',rr:o.best?'best':'new'};
+  fin(e);return e;
+}
+function fin(e){
+  var s=e.bonus||0;e.parts.forEach(function(p){s+=p.v});e.total=s;
+  if(e.kind==='test'&&e.parts.length===2){
+    e.crit=e.parts[0].v===e.parts[0].d&&e.parts[1].v===e.parts[1].d;
+    e.fumble=e.parts[0].v===1&&e.parts[1].v===1;
+  }
+}
+function outcome(e){
+  if(e.dt==null)return null;
+  if(e.ctx==='def'){return e.dt>e.total?{c:'bad',t:'Ataque atinge (maior que a Defesa)'}:{c:'ok',t:'Defesa mantida (empate não atravessa)'}}
+  if(e.total>e.dt)return {c:'ok',t:e.ctx==='atk'?'Acerto':'Sucesso'};
+  if(e.total===e.dt)return {c:'tie',t:e.ctx==='atk'?'Empate: o ataque não atravessa a defesa':'Empate: não completa, mas evita pior ou obtém algo parcial'};
+  return {c:'bad',t:e.ctx==='atk'?'Erro':'Falha'};
+}
+function diceRoll(counts,bonus,label,who,dt){
+  var parts=[],cap=[];
+  Object.keys(counts).map(Number).sort(function(a,b){return a-b}).forEach(function(d){
+    var n=counts[d]||0;if(n>0)cap.push(n+'d'+d);
+    for(var i=0;i<n;i++)parts.push({d:d,v:rnd(d)});
+  });
+  var e={kind:'free',who:who,label:label||'Rolagem livre',caption:cap.join(' + ')+(bonus?(bonus>0?' + ':' − ')+Math.abs(bonus):''),parts:parts,bonus:bonus,dt:(dt===''||dt==null)?null:dt,ctx:'test'};
+  fin(e);return e;
+}
+
+/* ================= Helpers de UI ================= */
+function dieChip(d){return '<span class="die">d'+d+'</span>'}
+function dieOpts(sel){return STEPS.map(function(d){return '<option value="'+d+'"'+(d===sel?' selected':'')+'>d'+d+'</option>'}).join('')}
+function curChar(){var h=(location.hash||'').replace('#','');return chars[h]||null}
+function partsHTML(e){
+  var h='<div class="dice">';
+  e.parts.forEach(function(p,i){
+    var cls='dv'+(p.v===p.d?' max':'')+(p.v===1?' one':'');
+    h+=(i?'<span class="op">+</span>':'')+'<div class="'+cls+'" title="d'+p.d+'"><small>d'+p.d+'</small>'+p.v+'</div>';
+    if(p.old!=null)h+='<div class="dv drop" title="valor anterior"><small>ant.</small>'+p.old+'</div>';
+  });
+  if(e.bonus)h+='<span class="op">'+(e.bonus>0?'+ ':'− ')+Math.abs(e.bonus)+'</span>';
+  return h+'</div>';
+}
+
+/* ================= Telas ================= */
+function render(){
+  var y=window.scrollY,c=curChar(),app=document.getElementById('app');
+  app.innerHTML=c?sheetView(c):homeView();
+  renderDock();renderModal();
+  window.scrollTo(0,y);
+}
+
+function topBar(c){
+  return '<header class="top"><div><div class="eyebrow">Operação Nêmesis · 14 de junho de 1944</div>'+
+   (c?'<h1>'+esc(c.nome)+'</h1><div class="muted small">Jogador: '+esc(c.jogador)+'</div>':'<h1>Os Assassinos da Escória</h1><div class="muted small">Fichas de campanha</div>')+
+   '</div><div class="row">'+(c?'<a class="btn ghost" href="#" data-act="home" style="text-decoration:none;display:inline-flex;align-items:center">← Arquivo</a>':'')+
+   '<label class="switch"><input type="checkbox" data-act="master" '+(ui.master?'checked':'')+'> Modo mestre</label>'+
+   '<span class="stamp">CONFIDENCIAL</span></div></header>';
+}
+
+function homeView(){
+  var h=topBar(null);
+  h+='<section><div class="label" style="margin-bottom:10px">Escolha a ficha</div><div class="files">';
+  ORDER.forEach(function(id){
+    var c=chars[id];
+    h+='<a class="file" href="#'+id+'"><div class="eyebrow">'+esc(c.jogador)+'</div><div class="nm">'+esc(c.nome)+'</div>'+
+     '<div class="small muted">'+esc(c.funcao)+'</div>'+
+     '<div class="dice"><span class="small muted">Fís</span>'+dieChip(c.attrs.fis)+'<span class="small muted">Men</span>'+dieChip(c.attrs.men)+'<span class="small muted">Emo</span>'+dieChip(c.attrs.emo)+'</div>'+
+     '<div class="kv small"><span>PV <b>'+c.pv+'/'+pvMax(c)+'</b></span><span>Det <b>'+c.det+'/'+detMax(c)+'</b></span></div></a>';
+  });
+  h+='</div></section>';
+  h+='<section class="panel"><span class="label">Rolador livre</span>'+rollerHTML('Mesa')+'</section>';
+  h+='<section class="panel"><span class="label">Histórico de rolagens deste aparelho</span>'+logHTML(25)+'</section>';
+  h+='<p class="muted small">As fichas ficam salvas neste aparelho. Cada jogador usa a sua no próprio navegador.</p>';
+  return h;
+}
+
+function tile(label,body,sub){return '<div class="tile"><span class="label">'+label+'</span>'+body+(sub?'<div class="small muted">'+sub+'</div>':'')+'</div>'}
+function stepper(c,k,min){
+  return '<div class="stepper"><button data-act="adj" data-k="'+k+'" data-n="-1" aria-label="diminuir">−</button>'+
+   '<input type="number" inputmode="numeric" data-path="'+k+'" value="'+c[k]+'" aria-label="'+k+'">'+
+   '<button data-act="adj" data-k="'+k+'" data-n="1" aria-label="aumentar">+</button></div>';
+}
+
+function sheetView(c){
+  var h=topBar(c);
+  var pm=pvMax(c),dm=detMax(c);
+  h+='<section class="vitals">';
+  h+=tile('Pontos de Vida',stepper(c,'pv'),'máx. '+pm+' = 20 + d'+c.attrs.fis);
+  h+=tile('Determinação',stepper(c,'det'),'máx. '+dm+' = 10 + d'+c.attrs.emo);
+  h+=tile('Defesa','<div class="big">'+defFixa(c)+' + 1d'+c.attrs.fis+'</div><button class="btn sm" data-act="defRoll">Rolar Defesa</button>',
+    '5 + proteção'+(c.cobertura?' + 2 cobertura':'')+' + Físico');
+  h+=tile('Proteção','<select data-path="protecao" aria-label="Proteção">'+PROT.map(function(p){return '<option value="'+p[0]+'"'+(p[0]===c.protecao?' selected':'')+'>'+p[1]+' (+'+p[0]+')</option>'}).join('')+'</select>');
+  h+=tile('Munição',stepper(c,'municao'),'máx. <input type="number" data-path="municaoMax" value="'+c.municaoMax+'" style="width:64px;min-height:28px;padding:2px 6px" aria-label="Munição máxima">');
+  h+=tile('Pontos de Avanço',stepper(c,'pa'),'2 por ato concluído');
+  h+='</section>';
+  if(c.pv===0)h+='<div class="banner"><b>Incapacitado.</b> O grupo tem cinco rodadas completas para conseguir ajuda. Um aliado gasta uma ação completa em Medicina + Mente contra DT 8; com sucesso, o personagem estabiliza e volta a 1 PV quando a cena permitir. Sem estabilização em cinco rodadas, o personagem morre.</div>';
+  if(c.det===0)h+='<div class="banner warn"><b>Determinação em 0.</b> Esgotamento por habilidade: não pode agir até receber ajuda ou a cena terminar. Abalo emocional: o mestre descreve uma reação imediata por no máximo uma rodada.</div>';
+  var tabs=[['ficha','Ficha'],['pericias','Perícias'],['hab','Habilidades'],['inv','Inventário'],['combate','Combate'],['evo','Evolução'],['dados','Dados']];
+  h+='<nav class="tabs" role="tablist">'+tabs.map(function(t){return '<button class="tab" role="tab" aria-selected="'+(ui.tab===t[0])+'" data-act="tab" data-t="'+t[0]+'">'+t[1]+'</button>'}).join('')+'</nav>';
+  var body={ficha:tabFicha,pericias:tabPericias,hab:tabHab,inv:tabInv,combate:tabCombate,evo:tabEvo,dados:tabDados}[ui.tab];
+  h+=body(c);
+  return h;
+}
+
+/* ---- Ficha ---- */
+function tabFicha(c){
+  var h='<div class="cols"><div class="stack">';
+  h+='<section class="panel"><span class="label">Dossiê</span><div class="stack" style="gap:10px">';
+  function idf(lbl,path){
+    return ui.master?'<label class="field"><span>'+lbl+'</span><input type="text" data-path="'+path+'" data-type="text" value="'+esc(c[path])+'"></label>':
+     '<div class="field"><span>'+lbl+'</span><div>'+esc(c[path])+'</div></div>';
+  }
+  h+=idf('Personagem','nome')+idf('Jogador','jogador')+idf('Idade','idade')+idf('Origem','origem')+idf('Função no grupo','funcao');
+  h+='</div></section>';
+  h+='<section class="panel"><span class="label">Atributos</span><div class="attrs">';
+  ['fis','men','emo'].forEach(function(k){
+    h+='<div class="attr"><div class="label">'+AT[k]+'</div>'+
+     (ui.master?'<select data-attr="'+k+'">'+dieOpts(c.attrs[k])+'</select>':'<div class="d">d'+c.attrs[k]+'</div>')+
+     '<div class="small muted">Nível '+(stepIdx(c.attrs[k])+1)+'</div></div>';
+  });
+  h+='</div><p class="small muted" style="margin:10px 0 0">PV máx. 20 + d'+c.attrs.fis+' = <b>'+pvMax(c)+'</b> · Determinação máx. 10 + d'+c.attrs.emo+' = <b>'+detMax(c)+'</b> · Defesa 5 + proteção + 1d'+c.attrs.fis+'</p></section>';
+  h+='<section class="panel"><span class="label">Recuperação</span><div class="row">'+
+   '<button class="btn sm" data-act="rec" data-r="pausaPV">Pausa curta: +1d4 PV</button>'+
+   '<button class="btn sm" data-act="rec" data-r="pausaDet">Pausa curta: +1d4 Determinação</button>'+
+   '<button class="btn sm" data-act="rec" data-r="apoio">Apoio de personagem: +1d4 Det</button>'+
+   '<button class="btn sm" data-act="rec" data-r="kit">Kit médico: +1d6 PV</button>'+
+   '<button class="btn sm" data-act="rec" data-r="descanso">Descanso seguro</button></div>'+
+   '<p class="small muted" style="margin:10px 0 0">Pausa curta: escolha PV ou Determinação. Descanso seguro: até metade do que foi perdido de cada recurso (arredondado para baixo). Apoio de personagem uma vez por ato. Kit médico uma vez por cena. Nada passa do máximo.</p></section>';
+  h+='</div><div class="stack">';
+  h+='<section class="panel"><span class="label">História e personalidade</span><div class="stack" style="gap:10px">'+
+   '<p style="margin:0">'+esc(c.resumo)+'</p>'+
+   [['Personalidade',c.personalidade],['Qualidade',c.qualidade],['Defeito',c.defeito],['Medo',c.medo]].map(function(f){return '<div class="field"><span>'+f[0]+'</span><div>'+esc(f[1])+'</div></div>'}).join('')+
+   '<label class="field"><span>Objetivo pessoal</span><textarea data-path="objetivo" data-type="text" style="min-height:70px">'+esc(c.objetivo)+'</textarea></label></div></section>';
+  h+='<section class="panel"><span class="label">Condições e efeitos temporários</span><textarea data-note="conds" placeholder="Ex.: +2 no próximo teste (Ponto de Observação), Abalo…">'+esc(c.conds)+'</textarea></section>';
+  h+='<section class="panel"><span class="label">Anotações</span><textarea data-note="notes" style="min-height:140px" placeholder="Pistas, nomes, lugares, recursos de missão…">'+esc(c.notes)+'</textarea></section>';
+  h+='<section class="panel"><span class="label">Ficha original</span>'+(ui.confirmReset?
+    '<div class="row"><span class="small">Apagar todas as alterações desta ficha?</span><button class="btn sm primary" data-act="reset2">Sim, restaurar</button><button class="btn sm" data-act="reset0">Cancelar</button></div>':
+    '<button class="btn sm" data-act="reset1">Restaurar valores do manual</button>')+'</section>';
+  h+='</div></div>';
+  return h;
+}
+
+/* ---- Perícias ---- */
+function cfgBar(){
+  var h='<section class="panel"><span class="label">Configurar teste</span><div class="stack" style="gap:12px">';
+  h+='<div><div class="small muted" style="margin-bottom:6px">Dificuldade do teste (DT)</div><div class="chips">'+
+    '<button class="chip" aria-pressed="'+(ui.cfg.dt===''?'true':'false')+'" data-act="dt" data-v="">sem DT</button>'+
+    DTS.map(function(d){return '<button class="chip" aria-pressed="'+(ui.cfg.dt===d[0]?'true':'false')+'" data-act="dt" data-v="'+d[0]+'" title="'+d[1]+'">'+d[0]+' · '+d[1]+'</button>'}).join('')+'</div></div>';
+  h+='<div class="cfg"><label class="field"><span>DT personalizada</span><input type="number" data-cfg="dt" inputmode="numeric" value="'+(ui.cfg.dt===''?'':ui.cfg.dt)+'" placeholder="—"></label>'+
+    '<label class="field"><span>Bônus ou penalidade</span><input type="number" data-cfg="bonus" inputmode="numeric" value="'+ui.cfg.bonus+'"></label>'+
+    '<label class="field"><span>Atributo do teste</span><select data-cfg="attr"><option value="">Padrão da perícia</option>'+Object.keys(AT).map(function(k){return '<option value="'+k+'"'+(ui.cfg.attr===k?' selected':'')+'>'+AT[k]+'</option>'}).join('')+'</select></label></div>';
+  h+='<div class="row small"><span class="muted">Atalhos:</span><button class="chip" data-act="bonus" data-n="1">+1 Ajuda de aliado</button><button class="chip" data-act="bonus" data-n="2">+2 habilidade</button><button class="chip" data-act="bonus" data-n="0">zerar bônus</button></div>';
+  h+='<p class="small muted" style="margin:0">Trocar o atributo exige permissão do mestre e explicação antes da rolagem. Sucesso: total maior que a DT. Empate: não é sucesso.</p></div></section>';
+  return h;
+}
+function tabPericias(c){
+  var h='<div class="stack">'+cfgBar()+'<div class="cols">';
+  ['men','fis','emo'].forEach(function(a){
+    h+='<section class="panel"><span class="label">'+AT[a]+'</span>';
+    SK.filter(function(s){return s[2]===a}).forEach(function(s){
+      h+='<div class="skill"><div><div class="nm">'+s[1]+'</div><div class="ds">'+s[3]+'</div></div>'+
+       (ui.master?'<select data-skill="'+s[0]+'" aria-label="dado de '+s[1]+'">'+dieOpts(c.skills[s[0]])+'</select>':dieChip(c.skills[s[0]]))+
+       '<button class="btn sm primary" data-act="skill" data-id="'+s[0]+'">Rolar</button></div>';
+    });
+    h+='</section>';
+  });
+  h+='</div></div>';
+  return h;
+}
+
+/* ---- Habilidades ---- */
+function abCount(c){return c.abilities.filter(function(a){return !a.trait}).length}
+function tabHab(c){
+  var h='<div class="stack"><section class="panel"><div class="row" style="justify-content:space-between"><div><span class="label" style="display:block">Habilidades</span><div class="small muted">'+abCount(c)+' de 3 habilidades · Determinação '+c.det+' / '+detMax(c)+'</div></div>'+
+   '<div class="row"><button class="btn sm" data-act="novaCena">Nova cena</button><button class="btn sm" data-act="novoCombate">Novo combate</button>'+(ui.master?'<button class="btn sm" data-act="abNew">Adicionar (mestre)</button>':'')+'</div></div></section>';
+  if(ui.msg)h+='<div class="banner warn" role="status">'+esc(ui.msg)+'</div>';
+  h+='<div class="cols">';
+  c.abilities.forEach(function(a){
+    h+='<article class="card"><h3><span>'+esc(a.nome)+'</span><span class="cost">'+(a.trait?'traço':'Custo: '+a.custo+' Det')+'</span></h3>'+
+     '<div>'+esc(a.desc)+'</div>';
+    if(a.req)h+='<div class="field"><span>Requisito</span><div class="small">'+esc(a.req)+'</div></div>';
+    if(a.teste)h+='<div class="field"><span>Teste exigido</span><div class="small">'+esc(a.teste)+'</div></div>';
+    if(a.limit)h+='<div class="field"><span>Limitação</span><div class="small">'+esc(a.limit)+'</div></div>';
+    if(!a.trait)h+='<div class="small muted">Em combate: ação completa (3 ações), salvo indicação diferente. Efeitos narrativos dependem da confirmação do mestre.</div>';
+    if(a.once)h+='<label class="switch small"><input type="checkbox" data-act="usedChk" data-id="'+a.id+'" '+(c.used[a.id]?'checked':'')+'> Usada nesta '+(a.once==='cena'?'cena':'combate')+'</label>';
+    if(!a.trait){
+      h+='<div class="row"><button class="btn primary sm" data-act="abAct" data-id="'+a.id+'"'+(c.det<a.custo?' disabled':'')+'>Ativar (−'+a.custo+' Det)</button></div>';
+      if(a.rolls&&a.rolls.length){
+        h+='<div class="row small"><span class="muted">Rolar teste:</span>'+a.rolls.map(function(r,i){var s=SKM[r.skill],ak=r.attr||s[2];return '<button class="btn sm" data-act="abRoll" data-id="'+a.id+'" data-i="'+i+'">'+s[1]+' + '+AT[ak]+(r.best?' (repete o melhor)':'')+'</button>'}).join('')+'</div>'+
+         '<div class="small muted">Usa a DT e o bônus da aba Perícias'+(ui.cfg.dt===''?' (nenhuma DT definida)':' (DT '+ui.cfg.dt+')')+'.</div>';
+      }
+    }
+    h+='<div class="row"><button class="btn sm ghost" data-act="abEdit" data-id="'+a.id+'">Substituir</button>'+(ui.master?'<button class="btn sm ghost" data-act="abDel" data-id="'+a.id+'">Remover</button>':'')+'</div></article>';
+  });
+  h+='</div></div>';
+  return h;
+}
+
+/* ---- Inventário ---- */
+function used(c){return c.items.reduce(function(s,i){return s+(+i.esp||0)},0)}
+function tabInv(c){
+  var cap=5+c.bolsas,u=used(c),over=u>cap;
+  var h='<div class="stack"><section class="panel"><span class="label">Capacidade</span>'+
+   '<div class="row" style="justify-content:space-between"><div class="mono" style="font-size:22px;font-weight:600">'+u+' / '+cap+' <span class="small muted">espaços</span></div>'+
+   '<label class="row small"><span>Bolsas</span><div class="stepper" style="width:140px"><button data-act="adj" data-k="bolsas" data-n="-1">−</button><input type="number" data-path="bolsas" value="'+c.bolsas+'"><button data-act="adj" data-k="bolsas" data-n="1">+</button></div></label></div>'+
+   '<div class="meter'+(over?' over':'')+'" style="margin:10px 0"><i style="width:'+Math.min(100,Math.round(u/cap*100))+'%"></i></div>'+
+   '<div class="small '+(over?'':'muted')+'" style="'+(over?'color:var(--bad)':'')+'">'+(over?'Acima da capacidade. Remova itens ou ajuste as bolsas.':'Livres: '+(cap-u)+'. Capacidade = 5 + bolsas. Item comum ocupa 1 espaço, volumoso 2. Itens vestíveis e roupas comuns não ocupam espaço.')+'</div></section>';
+  h+='<section class="panel"><span class="label">Itens</span>';
+  c.items.forEach(function(it){
+    h+='<div class="item"><input type="text" data-item="'+it.id+'" data-f="nome" value="'+esc(it.nome)+'" aria-label="Nome do item">'+
+     '<select data-item="'+it.id+'" data-f="esp" aria-label="Espaços"><option value="0"'+(+it.esp===0?' selected':'')+'>0 vestível</option><option value="1"'+(+it.esp===1?' selected':'')+'>1 comum</option><option value="2"'+(+it.esp===2?' selected':'')+'>2 volumoso</option></select>'+
+     '<input class="idesc" type="text" data-item="'+it.id+'" data-f="desc" value="'+esc(it.desc)+'" placeholder="Descrição ou efeito (aprovado pelo mestre)" aria-label="Descrição"><button class="btn sm ghost irm" data-act="itemDel" data-id="'+it.id+'">Remover</button></div>';
+  });
+  if(!c.items.length)h+='<div class="muted small">Inventário vazio.</div>';
+  h+='<div class="row" style="margin-top:12px"><button class="btn primary sm" data-act="itemAdd">Adicionar item</button></div>';
+  h+='<p class="small muted" style="margin:10px 0 0">Um item não pode aumentar PV, Defesa ou capacidade sem indicar exatamente quanto e por quanto tempo. Bônus de mesma origem não se acumulam.</p></section></div>';
+  return h;
+}
+
+/* ---- Combate ---- */
+function tabCombate(c){
+  var a=ui.atk;
+  var h='<div class="cols"><div class="stack">';
+  h+='<section class="panel"><span class="label">Turno</span><div class="row"><button class="btn primary" data-act="init">Rolar iniciativa</button><span class="small muted">Prontidão + Físico. Maior total age primeiro; empate: maior dado de Prontidão.</span></div>'+
+   '<div style="margin:14px 0 8px" class="label">Ações restantes</div><div class="pips">'+[0,1,2].map(function(i){return '<div class="pip'+(i<c.acoes?'':' off')+'"></div>'}).join('')+'</div>'+
+   '<div class="row" style="margin-top:10px"><button class="btn sm" data-act="acao" data-n="1"'+(c.acoes<1?' disabled':'')+'>Ação básica (1)</button><button class="btn sm" data-act="acao" data-n="3"'+(c.acoes<3?' disabled':'')+'>Ação completa (3)</button><button class="btn sm ghost" data-act="acao" data-n="0">Ação livre (0)</button><button class="btn sm" data-act="turno">Novo turno</button></div>'+
+   '<label class="switch" style="margin-top:12px"><input type="checkbox" data-act="cobertura" '+(c.cobertura?'checked':'')+'> Em cobertura (+2 Defesa)</label></section>';
+  h+='<section class="panel"><span class="label">Defesa</span><div class="row"><label class="field grow"><span>Total do ataque recebido (opcional)</span><input type="number" id="def-atk" inputmode="numeric" value="'+esc(ui.def.atk)+'"></label><button class="btn primary" data-act="defRoll2">Rolar Defesa</button></div>'+
+   '<p class="small muted" style="margin:10px 0 0">Defesa = 5 + proteção + 1d'+c.attrs.fis+'. O ataque precisa ser maior que a Defesa; empate não atravessa.</p></section>';
+  h+='<section class="panel"><span class="label">Ataque</span><div class="stack" style="gap:12px"><div class="cfg">'+
+   '<label class="field"><span>Perícia</span><select id="atk-skill"><option value="cac"'+(a.skill==='cac'?' selected':'')+'>Combate Corpo a Corpo (d'+c.skills.cac+')</option><option value="adi"'+(a.skill==='adi'?' selected':'')+'>Combate à Distância (d'+c.skills.adi+')</option></select></label>'+
+   '<label class="field"><span>Defesa do alvo</span><input type="number" id="atk-target" inputmode="numeric" value="'+esc(a.target)+'"></label>'+
+   '<label class="field"><span>Bônus</span><input type="number" id="atk-bonus" inputmode="numeric" value="'+a.bonus+'"></label>'+
+   '<label class="field"><span>Gasta munição</span><select id="atk-ammo"><option value="0"'+(a.ammo==0?' selected':'')+'>Nenhuma</option><option value="1"'+(a.ammo==1?' selected':'')+'>1</option><option value="2"'+(a.ammo==2?' selected':'')+'>2 (impacto especial)</option></select></label></div>'+
+   '<div class="row"><button class="btn primary" data-act="atk">Rolar ataque</button><span class="small muted">Munição: '+c.municao+' / '+c.municaoMax+'</span></div>'+
+   '<div class="cfg"><label class="field"><span>Categoria de dano</span><select id="atk-cat">'+DANO.map(function(d){return '<option value="'+d[0]+'"'+(a.cat===d[0]?' selected':'')+'>'+d[1]+' ('+d[2]+'d'+d[3]+')</option>'}).join('')+'</select></label></div>'+
+   '<div class="row"><button class="btn" data-act="dmg">Rolar dano</button><span class="small muted">Em acerto, o dano é subtraído dos PV do alvo.</span></div></div></section>';
+  h+='</div><div class="stack">';
+  h+='<section class="panel"><span class="label">Referência</span><div class="scroll"><table><thead><tr><th>Ação</th><th>Custo</th></tr></thead><tbody>'+
+   '<tr><td>Básica: mover, interagir, ajudar, ataque simples, usar item</td><td>1</td></tr><tr><td>Completa: atravessar área extensa, habilidade, tarefa complexa</td><td>3</td></tr><tr><td>Livre: falar brevemente, soltar objeto</td><td>0</td></tr></tbody></table></div>'+
+   '<div class="scroll" style="margin-top:12px"><table><thead><tr><th>Dano</th><th>Dado</th></tr></thead><tbody>'+DANO.map(function(d){return '<tr><td>'+d[1]+'</td><td class="mono">'+d[2]+'d'+d[3]+'</td></tr>'}).join('')+'</tbody></table></div>'+
+   '<ul class="small muted" style="padding-left:18px;margin:12px 0 0"><li>Cobertura: +2 Defesa enquanto estiver nela.</li><li>Preparar (ação básica): +1 no próximo teste compatível.</li><li>Fugir (ação completa): Atletismo ou Furtividade contra DT 8 ou maior.</li><li>Recuar em grupo: pelo menos metade supera a DT.</li><li>Recarga em combate custa uma ação básica.</li></ul></section>';
+  h+='</div></div>';
+  return h;
+}
+
+/* ---- Evolução ---- */
+function tabEvo(c){
+  var h='<div class="stack"><section class="panel"><div class="row" style="justify-content:space-between"><div><span class="label" style="display:block">Pontos de Avanço</span><div class="mono" style="font-size:28px;font-weight:600">'+c.pa+'</div></div>'+
+   '<div class="row"><button class="btn sm primary" data-act="ato">Encerrar ato (+2)</button><button class="btn sm" data-act="paBonus">+1 por objetivo pessoal</button></div></div>'+
+   '<p class="small muted" style="margin:10px 0 0">Ao fim de cada ato: 2 pontos. O mestre pode conceder 1 adicional por objetivo pessoal concluído ou consequência assumida para proteger alguém.'+(ui.master?' <b>Modo mestre ativo: limites de evolução ignorados.</b>':'')+'</p></section>';
+  if(ui.msg)h+='<div class="banner warn" role="status">'+esc(ui.msg)+'</div>';
+  h+='<div class="cols"><section class="panel"><span class="label">Atributos (3 pontos, um passo por ato)</span>';
+  ['fis','men','emo'].forEach(function(k){
+    var r=canAttr(c,k);
+    h+='<div class="skill"><div><div class="nm">'+AT[k]+'</div><div class="ds">'+(r.why||('d'+c.attrs[k]+' → d'+STEPS[stepIdx(c.attrs[k])+1]))+(c.subiu[k]?' · já subiu neste ato':'')+'</div></div>'+dieChip(c.attrs[k])+
+     '<button class="btn sm" data-act="evAttr" data-k="'+k+'"'+(r.ok?'':' disabled')+'>Subir (3)</button></div>';
+  });
+  h+='</section><section class="panel"><span class="label">Perícias (2 pontos por passo)</span>';
+  SK.forEach(function(s){
+    var r=canSkill(c,s[0]);
+    h+='<div class="skill"><div><div class="nm">'+s[1]+' <span class="muted small">('+AT[s[2]]+')</span></div>'+(r.ok?'':'<div class="ds">'+r.why+'</div>')+'</div>'+dieChip(c.skills[s[0]])+
+     '<button class="btn sm" data-act="evSkill" data-id="'+s[0]+'"'+(r.ok?'':' disabled')+'>Subir (2)</button></div>';
+  });
+  h+='</section></div>';
+  var full=abCount(c)>=3&&!ui.master;
+  h+='<section class="panel"><span class="label">Habilidades</span><label class="switch" style="margin-bottom:10px"><input type="checkbox" id="scene-ok"> A cena de desenvolvimento aconteceu</label><div class="row"><button class="btn sm" data-act="evAb"'+(full?' disabled':'')+'>Aprender habilidade (3 pontos + cena)</button><span class="small muted">'+(full?'Você já tem 3 habilidades. Substitua uma na aba Habilidades (sem custo, com justificativa narrativa).':'Máximo de 3 habilidades ao mesmo tempo.')+'</span></div></section></div>';
+  return h;
+}
+function canAttr(c,k){
+  var i=stepIdx(c.attrs[k]);
+  if(i>=4)return {ok:false,why:'Já está em d12.'};
+  if(c.pa<3)return {ok:false,why:'Pontos de Avanço insuficientes (precisa de 3).'};
+  if(!ui.master&&c.subiu[k])return {ok:false,why:'Um atributo só sobe um passo por ato.'};
+  return {ok:true};
+}
+function canSkill(c,sid){
+  var s=SKM[sid],i=stepIdx(c.skills[sid]),ai=stepIdx(c.attrs[s[2]]);
+  if(i>=4)return {ok:false,why:'Já está em d12.'};
+  if(c.pa<2)return {ok:false,why:'Pontos de Avanço insuficientes (precisa de 2).'};
+  if(!ui.master){
+    if(i+1>ai+2)return {ok:false,why:'Não pode ficar mais de dois passos acima do atributo (d'+c.attrs[s[2]]+' permite até d'+STEPS[Math.min(4,ai+2)]+').'};
+    if(i+1===4&&ai<2)return {ok:false,why:'Para chegar a d12, o atributo precisa estar em pelo menos d8.'};
+  }
+  return {ok:true};
+}
+
+/* ---- Dados ---- */
+function rollerHTML(who){
+  var r=ui.roller,tot=0,expr=[];
+  FREE_DICE.forEach(function(d){if(r.c[d]>0){expr.push(r.c[d]+'d'+d);tot+=r.c[d]}});
+  var h='<div class="stack" data-who="'+esc(who)+'"><div class="dicegrid">';
+  FREE_DICE.forEach(function(d){
+    h+='<div class="dtype'+(r.c[d]>0?' on':'')+'"><span class="dn">d'+d+'</span><div class="stepper"><button data-act="rc" data-d="'+d+'" data-n="-1" aria-label="menos d'+d+'">−</button><input type="number" data-rc="'+d+'" value="'+r.c[d]+'" aria-label="quantidade de d'+d+'"><button data-act="rc" data-d="'+d+'" data-n="1" aria-label="mais d'+d+'">+</button></div></div>';
+  });
+  h+='</div><div class="cfg"><label class="field"><span>Bônus ou penalidade</span><input type="number" id="rl-bonus" inputmode="numeric" value="'+r.bonus+'"></label>'+
+   '<label class="field"><span>DT (opcional)</span><input type="number" id="rl-dt" inputmode="numeric" value="'+esc(r.dt)+'" placeholder="—"></label>'+
+   '<label class="field"><span>Descrição</span><input type="text" id="rl-label" value="'+esc(r.label)+'" placeholder="Ex.: dano da pistola"></label></div>'+
+   '<div class="row"><button class="btn primary" data-act="rollFree" '+(tot?'':'disabled')+'>Rolar '+(expr.join(' + ')||'—')+'</button><button class="btn ghost" data-act="rcClear">Zerar dados</button></div></div>';
+  return h;
+}
+function logHTML(n){
+  var items=log.slice(-n).reverse();
+  if(!items.length)return '<div class="muted small">Nenhuma rolagem ainda.</div>';
+  return '<div class="log">'+items.map(function(e){
+    var o=outcome(e),txt;
+    if(e.kind==='info')txt=esc(e.text);
+    else{
+      txt='<b>'+esc(e.who)+'</b> · '+esc(e.label)+': <span class="mono">'+e.parts.map(function(p){return 'd'+p.d+'='+p.v}).join(' ')+(e.bonus?' '+(e.bonus>0?'+':'−')+Math.abs(e.bonus):'')+' → '+e.total+'</span>'+
+       (e.dt!=null?' <span class="muted">(DT '+e.dt+')</span>':'')+(o?' · '+esc(o.t):'')+(e.crit?' · <b>crítico</b>':'')+(e.fumble?' · <b>falha crítica</b>':'')+(e.note?' · '+esc(e.note):'');
+    }
+    return '<div><span class="t">'+esc(e.t||'')+'</span><span>'+txt+'</span></div>';
+  }).join('')+'</div>';
+}
+function tabDados(c){
+  return '<div class="cols"><section class="panel"><span class="label">Rolador livre</span>'+rollerHTML(c.nome)+'</section>'+
+   '<section class="panel"><span class="label">Histórico de rolagens</span>'+logHTML(40)+'<div class="row" style="margin-top:12px"><button class="btn sm ghost" data-act="logClear">Limpar histórico</button></div></section></div>';
+}
+
+/* ---- Painel de última rolagem ---- */
+function renderDock(){
+  var d=document.getElementById('dock'),e=ui.last;
+  if(!e){d.hidden=true;d.innerHTML='';document.body.style.paddingBottom='';return}
+  d.hidden=false;
+  var h='<div class="dock-in pop"><div class="dock-top"><div><div class="eyebrow">'+esc(e.who||'')+(e.t?' · '+e.t:'')+'</div><div style="font-weight:600">'+esc(e.kind==='info'?e.text:e.label)+'</div>'+(e.caption?'<div class="small muted">'+esc(e.caption)+'</div>':'')+'</div>'+
+   '<button class="btn sm ghost" data-act="dockClose" aria-label="Fechar">Fechar</button></div>';
+  if(e.kind!=='info'){
+    var o=outcome(e);
+    h+='<div class="row" style="gap:14px">'+partsHTML(e)+'<span class="op">=</span><span class="total">'+e.total+'</span>'+(e.dt!=null?'<span class="muted mono">vs '+(e.ctx==='def'?'ataque ':'DT ')+e.dt+'</span>':'')+'</div>';
+    h+='<div class="row">';
+    if(o)h+='<span class="badge '+o.c+'">'+esc(o.t)+'</span>';
+    if(e.crit)h+='<span class="badge crit">Crítico: dados no máximo</span>';
+    if(e.fumble)h+='<span class="badge fumble">Falha crítica: dois 1</span>';
+    h+='</div>';
+    if(e.crit)h+='<div class="small muted">Sucesso crítico dá uma vantagem narrativa pequena, mas não torna possível uma ação impossível.</div>';
+    if(e.fumble)h+='<div class="small muted">Falha crítica: a ação falha e surge uma complicação adicional.</div>';
+    if(e.kind==='test'&&!e.rerolled){
+      h+='<div class="row small"><span class="muted">Vantagem concedida pelo mestre:</span>'+e.parts.map(function(p,i){return '<button class="btn sm" data-act="reroll" data-i="'+i+'">Rolar de novo o d'+p.d+(e.rr==='best'?' (fica o melhor)':'')+'</button>'}).join('')+'</div>';
+    }
+  }
+  d.innerHTML=h+'</div>';
+  document.body.style.paddingBottom=(d.offsetHeight+24)+'px';
+}
+
+/* ---- Modal de habilidade ---- */
+function renderModal(){
+  var m=document.getElementById('modal'),s=ui.modal;
+  if(!s){m.hidden=true;m.innerHTML='';return}
+  var c=curChar();if(!c){m.hidden=true;return}
+  var a=s.id?c.abilities.filter(function(x){return x.id===s.id})[0]:null;a=a||{};
+  var title=s.mode==='replace'?'Substituir habilidade':(s.mode==='learn'?'Aprender habilidade (3 pontos de avanço)':'Nova habilidade');
+  function f(id,lbl,val,ta){return '<label class="field"><span>'+lbl+'</span>'+(ta?'<textarea id="'+id+'" style="min-height:80px">'+esc(val)+'</textarea>':'<input type="text" id="'+id+'" value="'+esc(val)+'">')+'</label>'}
+  m.hidden=false;
+  m.innerHTML='<div class="sheet" role="dialog" aria-modal="true" aria-label="'+title+'"><h2>'+title+'</h2>'+
+   (s.mode==='replace'?'<p class="small muted" style="margin:0">Sem custo, com justificativa narrativa, quando houver mudança real de personagem.</p>':'')+
+   f('m-nome','Nome',a.nome||'')+f('m-desc','Descrição e efeito',a.desc||'',1)+
+   '<div class="cfg"><label class="field"><span>Custo de Determinação</span><input type="number" id="m-custo" value="'+(a.custo!=null?a.custo:4)+'"></label>'+
+   '<label class="field"><span>Uso limitado</span><select id="m-once"><option value="">Sem limite</option><option value="cena"'+(a.once==='cena'?' selected':'')+'>Uma vez por cena</option><option value="combate"'+(a.once==='combate'?' selected':'')+'>Uma vez por combate</option></select></label></div>'+
+   f('m-req','Requisito ou condição',a.req||'')+f('m-teste','Teste exigido',a.teste||'')+f('m-limit','Limitação',a.limit||'')+
+   (s.mode==='replace'?f('m-why','Justificativa narrativa','',1):'')+
+   '<div class="small muted" id="m-err" style="color:var(--bad)"></div>'+
+   '<div class="row"><button class="btn primary" data-act="mSave">Salvar</button><button class="btn" data-act="mClose">Cancelar</button></div></div>';
+}
+
+/* ================= Ações ================= */
+function clampFor(c,k,v){
+  var max={pv:pvMax(c),det:detMax(c),municao:c.municaoMax,municaoMax:99,pa:99,bolsas:20,protecao:3,recursos:99}[k];
+  return Math.max(0,Math.min(max==null?99:max,v));
+}
+function apply(c,k,gain){var before=c[k];c[k]=clampFor(c,k,c[k]+gain);return c[k]-before}
+function info(c,text){pushLog({kind:'info',who:c.nome,text:c.nome+': '+text})}
+function cfgBonus(){return ui.cfg.bonus||0}
+
+var A={
+ home:function(){location.hash=''},
+ master:function(el){ui.master=el.checked;ui.msg='';render()},
+ tab:function(el){ui.tab=el.dataset.t;ui.msg='';render()},
+ adj:function(el,c){var k=el.dataset.k;c[k]=clampFor(c,k,c[k]+num(el.dataset.n,0));saveChar(c);render()},
+ dt:function(el){ui.cfg.dt=el.dataset.v===''?'':num(el.dataset.v,'');render()},
+ bonus:function(el){var n=num(el.dataset.n,0);ui.cfg.bonus=n===0?0:(ui.cfg.bonus||0)+n;render()},
+ skill:function(el,c){
+  var e=testRoll(c,el.dataset.id,{dt:ui.cfg.dt,bonus:cfgBonus(),attr:ui.cfg.attr||''});
+  pushLog(e);render();
+ },
+ defRoll:function(el,c){defense(c,'')},
+ defRoll2:function(el,c){var v=document.getElementById('def-atk').value;ui.def.atk=v;defense(c,v)},
+ init:function(el,c){var e=testRoll(c,'prontidao',{attr:'fis',label:'Iniciativa (Prontidão + Físico)',bonus:cfgBonus()});pushLog(e);render()},
+ acao:function(el,c){var n=num(el.dataset.n,0);if(n>0)c.acoes=Math.max(0,c.acoes-n);saveChar(c);info(c,n===0?'usou uma ação livre.':'gastou '+n+(n===1?' ação (básica).':' ações (completa).')+' Restam '+c.acoes+'.');render()},
+ turno:function(el,c){c.acoes=3;saveChar(c);render()},
+ cobertura:function(el,c){c.cobertura=el.checked;saveChar(c);render()},
+ atk:function(el,c){
+  readAtk();var a=ui.atk,msg='';
+  var cost=a.ammo;
+  if(cost>0&&c.municao<cost){ui.last={kind:'info',who:c.nome,text:'Sem munição suficiente (restam '+c.municao+'). Repor exige oportunidade narrativa e autorização do mestre.',t:nowStr()};renderDock();return}
+  var e=testRoll(c,a.skill,{dt:a.target===''?'':num(a.target,''),bonus:a.bonus,ctx:'atk',label:'Ataque: '+SKM[a.skill][1]});
+  if(cost>0){c.municao=clampFor(c,'municao',c.municao-cost);e.note='−'+cost+' munição';saveChar(c)}
+  pushLog(e);render();
+ },
+ dmg:function(el,c){
+  readAtk();var d=DANO.filter(function(x){return x[0]===ui.atk.cat})[0];
+  var cnt={};cnt[d[3]]=d[2];
+  var e=diceRoll(cnt,0,'Dano: '+d[1],c.nome,'');e.kind='dmg';
+  pushLog(e);render();
+ },
+ rec:function(el,c){
+  var r=el.dataset.r,e,k,n=0,txt;
+  if(r==='descanso'){
+    var lp=Math.floor((pvMax(c)-c.pv)/2),ld=Math.floor((detMax(c)-c.det)/2);
+    c.pv+=lp;c.det+=ld;saveChar(c);info(c,'descanso seguro: +'+lp+' PV, +'+ld+' Determinação.');render();return;
+  }
+  var die=(r==='kit')?6:4,tgt=(r==='pausaDet'||r==='apoio')?'det':'pv';
+  var v=rnd(die);n=apply(c,tgt,v);saveChar(c);
+  e={kind:'rec',who:c.nome,label:({pausaPV:'Pausa curta',pausaDet:'Pausa curta',apoio:'Apoio de personagem',kit:'Kit médico'})[r],caption:'1d'+die+' → +'+n+' '+(tgt==='pv'?'PV':'Determinação')+(n<v?' (limitado ao máximo)':''),parts:[{d:die,v:v}],bonus:0,dt:null,ctx:'test'};
+  fin(e);pushLog(e);render();
+ },
+ abAct:function(el,c){
+  var a=c.abilities.filter(function(x){return x.id===el.dataset.id})[0];ui.msg='';
+  if(c.det<a.custo){ui.msg='Determinação insuficiente: custa '+a.custo+' e há '+c.det+'.'}
+  else if(a.once&&c.used[a.id]){ui.msg=a.nome+' já foi usada nesta '+(a.once==='cena'?'cena':'luta')+'. Desmarque a caixa se o mestre permitir.'}
+  else{
+    c.det-=a.custo;if(a.once)c.used[a.id]=true;saveChar(c);
+    info(c,'ativou '+a.nome+' (−'+a.custo+' Determinação). Efeitos narrativos dependem da confirmação do mestre.');
+  }
+  render();
+ },
+ abRoll:function(el,c){
+  var a=c.abilities.filter(function(x){return x.id===el.dataset.id})[0],r=a.rolls[num(el.dataset.i,0)];
+  var s=SKM[r.skill];
+  var e=testRoll(c,r.skill,{dt:ui.cfg.dt,bonus:cfgBonus(),attr:r.attr||'',best:r.best,label:a.nome+': '+s[1]});
+  pushLog(e);render();
+ },
+ usedChk:function(el,c){c.used[el.dataset.id]=el.checked;saveChar(c);render()},
+ novaCena:function(el,c){c.abilities.forEach(function(a){if(a.once==='cena')c.used[a.id]=false});saveChar(c);info(c,'nova cena: habilidades de uso por cena disponíveis.');render()},
+ novoCombate:function(el,c){c.abilities.forEach(function(a){if(a.once)c.used[a.id]=false});c.acoes=3;c.cobertura=false;saveChar(c);info(c,'novo combate: habilidades por cena e por combate disponíveis, 3 ações.');render()},
+ abEdit:function(el){ui.modal={mode:'replace',id:el.dataset.id};renderModal()},
+ abNew:function(){ui.modal={mode:'new'};renderModal()},
+ abDel:function(el,c){c.abilities=c.abilities.filter(function(a){return a.id!==el.dataset.id});saveChar(c);info(c,'habilidade removida pelo mestre.');render()},
+ evAb:function(el,c){
+  ui.msg='';
+  if(c.pa<3&&!ui.master){ui.msg='Pontos de Avanço insuficientes (precisa de 3).';render();return}
+  if(!document.getElementById('scene-ok').checked){ui.msg='Aprender uma habilidade exige uma cena de desenvolvimento. Marque a caixa quando o mestre confirmar.';render();return}
+  ui.modal={mode:'learn'};renderModal();
+ },
+ evAttr:function(el,c){
+  var k=el.dataset.k,r=canAttr(c,k);ui.msg='';
+  if(!r.ok){ui.msg=r.why}
+  else{var from=c.attrs[k];c.attrs[k]=STEPS[stepIdx(from)+1];c.pa-=3;c.subiu[k]=true;saveChar(c);info(c,AT[k]+' subiu de d'+from+' para d'+c.attrs[k]+' (−3 PA).')}
+  render();
+ },
+ evSkill:function(el,c){
+  var id=el.dataset.id,r=canSkill(c,id);ui.msg='';
+  if(!r.ok){ui.msg=r.why}
+  else{var from=c.skills[id];c.skills[id]=STEPS[stepIdx(from)+1];c.pa-=2;saveChar(c);info(c,SKM[id][1]+' subiu de d'+from+' para d'+c.skills[id]+' (−2 PA).')}
+  render();
+ },
+ ato:function(el,c){c.pa+=2;c.subiu={fis:false,men:false,emo:false};saveChar(c);info(c,'ato encerrado: +2 Pontos de Avanço.');render()},
+ paBonus:function(el,c){c.pa+=1;saveChar(c);info(c,'+1 Ponto de Avanço por objetivo pessoal ou consequência assumida.');render()},
+ rc:function(el){readRoller();var d=el.dataset.d,n=num(el.dataset.n,0);ui.roller.c[d]=Math.max(0,Math.min(50,(ui.roller.c[d]||0)+n));render()},
+ rcClear:function(){FREE_DICE.forEach(function(d){ui.roller.c[d]=0});render()},
+ rollFree:function(el,c){
+  readRoller();var r=ui.roller,who=c?c.nome:'Mesa';
+  var e=diceRoll(r.c,r.bonus,r.label,who,r.dt===''?'':num(r.dt,''));
+  if(!e.parts.length)return;pushLog(e);render();
+ },
+ logClear:function(){log=[];ui.last=null;saveLog();render()},
+ dockClose:function(){ui.last=null;renderDock()},
+ reroll:function(el){
+  var e=ui.last;if(!e||e.rerolled)return;
+  var i=num(el.dataset.i,0),p=e.parts[i],nv=rnd(p.d);
+  p.old=p.v;if(e.rr==='best'){p.v=Math.max(p.v,nv)}else{p.v=nv}
+  p.rolled=nv;e.rerolled=true;fin(e);e.note='dado re-rolado: '+p.old+' → '+nv+(e.rr==='best'?' (ficou '+p.v+')':'');saveLog();render();
+ },
+ itemAdd:function(el,c){c.items.push({id:'i'+Date.now(),nome:'Novo item',esp:1,desc:''});saveChar(c);render()},
+ itemDel:function(el,c){c.items=c.items.filter(function(i){return i.id!==el.dataset.id});saveChar(c);render()},
+ reset1:function(){ui.confirmReset=true;render()},
+ reset0:function(){ui.confirmReset=false;render()},
+ reset2:function(el,c){chars[c.id]=clone(DEFAULTS[c.id]);saveChar(chars[c.id]);ui.confirmReset=false;render()},
+ mClose:function(){ui.modal=null;renderModal()},
+ mSave:function(el,c){
+  var s=ui.modal,g=function(i){return document.getElementById(i).value.trim()};
+  var nome=g('m-nome'),desc=g('m-desc'),err=document.getElementById('m-err');
+  if(!nome||!desc){err.textContent='Informe nome e descrição.';return}
+  if(s.mode==='replace'&&!g('m-why')){err.textContent='Informe a justificativa narrativa da substituição.';return}
+  var data={nome:nome,desc:desc,custo:Math.max(0,num(g('m-custo'),0)),once:g('m-once')||undefined,req:g('m-req')||undefined,teste:g('m-teste')||undefined,limit:g('m-limit')||undefined};
+  if(s.mode==='replace'){
+    var old=c.abilities.filter(function(x){return x.id===s.id})[0];
+    // substituição mantém o id, mas perde as rolagens pré-configuradas
+    var na=Object.assign({id:old.id,trait:old.trait},data);
+    c.abilities=c.abilities.map(function(x){return x.id===old.id?na:x});
+    c.used[old.id]=false;saveChar(c);info(c,'substituiu '+old.nome+' por '+nome+'. Justificativa: '+g('m-why'));
+  }else if(s.mode==='learn'){
+    if(abCount(c)>=3&&!ui.master){err.textContent='Já há 3 habilidades. Substitua uma antes.';return}
+    if(c.pa<3){err.textContent='Pontos de Avanço insuficientes.';return}
+    c.pa-=3;data.id='a'+Date.now();c.abilities.push(data);saveChar(c);info(c,'aprendeu a habilidade '+nome+' (−3 PA).');
+  }else{
+    data.id='a'+Date.now();c.abilities.push(data);saveChar(c);info(c,'habilidade '+nome+' adicionada pelo mestre.');
+  }
+  ui.modal=null;render();
+ }
+};
+
+function defense(c,atkVal){
+  var d=c.attrs.fis,v=rnd(d),bonus=defFixa(c);
+  var e={kind:'def',who:c.nome,label:'Defesa',caption:'5 + proteção '+c.protecao+(c.cobertura?' + cobertura 2':'')+' + 1d'+d,parts:[{d:d,v:v}],bonus:bonus,dt:(atkVal===''||atkVal==null)?null:num(atkVal,null),ctx:'def'};
+  fin(e);pushLog(e);render();
+}
+function readAtk(){
+  var g=function(i){var el=document.getElementById(i);return el?el.value:null};
+  var a=ui.atk;
+  if(g('atk-skill')!=null)a.skill=g('atk-skill');
+  if(g('atk-target')!=null)a.target=g('atk-target');
+  if(g('atk-bonus')!=null)a.bonus=num(g('atk-bonus'),0);
+  if(g('atk-ammo')!=null)a.ammo=num(g('atk-ammo'),0);
+  if(g('atk-cat')!=null)a.cat=g('atk-cat');
+}
+function readRoller(){
+  var r=ui.roller,g=function(i){var el=document.getElementById(i);return el?el.value:null};
+  if(g('rl-bonus')!=null)r.bonus=num(g('rl-bonus'),0);
+  if(g('rl-dt')!=null)r.dt=g('rl-dt');
+  if(g('rl-label')!=null)r.label=g('rl-label');
+  document.querySelectorAll('[data-rc]').forEach(function(i){r.c[i.dataset.rc]=Math.max(0,Math.min(50,num(i.value,0)))});
+}
+
+/* ================= Eventos ================= */
+document.addEventListener('click',function(ev){
+  var el=ev.target.closest('[data-act]');if(!el)return;
+  var act=el.dataset.act;
+  if(el.tagName==='INPUT'&&el.type==='checkbox'){/* trata em change */return}
+  if(act==='home'){ev.preventDefault();location.hash='';return}
+  var fn=A[act];if(!fn)return;
+  fn(el,curChar());
+});
+document.addEventListener('change',function(ev){
+  var el=ev.target,c=curChar();
+  if(el.dataset.act&&el.type==='checkbox'){var fn=A[el.dataset.act];if(fn)fn(el,c);return}
+  if(el.dataset.path&&c){
+    var k=el.dataset.path;
+    if(el.dataset.type==='text'){c[k]=el.value}
+    else{c[k]=clampFor(c,k,num(el.value,0));if(k==='municaoMax')c.municao=clampFor(c,'municao',c.municao)}
+    saveChar(c);render();return;
+  }
+  if(el.dataset.attr&&c){c.attrs[el.dataset.attr]=num(el.value,6);c.pv=clampFor(c,'pv',c.pv);c.det=clampFor(c,'det',c.det);saveChar(c);render();return}
+  if(el.dataset.skill&&c){c.skills[el.dataset.skill]=num(el.value,6);saveChar(c);render();return}
+  if(el.dataset.cfg){
+    var f=el.dataset.cfg;
+    if(f==='dt')ui.cfg.dt=el.value===''?'':num(el.value,'');
+    else if(f==='bonus')ui.cfg.bonus=num(el.value,0);
+    else ui.cfg.attr=el.value;
+    render();return;
+  }
+  if(el.dataset.item&&c){
+    var it=c.items.filter(function(i){return i.id===el.dataset.item})[0];
+    if(it){it[el.dataset.f]=el.dataset.f==='esp'?num(el.value,1):el.value;saveChar(c);render()}
+    return;
+  }
+  if(el.dataset.rc!=null||el.id==='rl-bonus'||el.id==='rl-dt'||el.id==='rl-label'){readRoller();render();return}
+  if(el.id&&el.id.indexOf('atk-')===0){readAtk();render();return}
+});
+document.addEventListener('input',function(ev){
+  var el=ev.target,c=curChar();
+  if(el.dataset.note&&c){c[el.dataset.note]=el.value;saveChar(c)}
+});
+document.addEventListener('keydown',function(ev){if(ev.key==='Escape'&&ui.modal){ui.modal=null;renderModal()}});
+window.addEventListener('hashchange',function(){ui.tab='ficha';ui.msg='';ui.confirmReset=false;ui.modal=null;window.scrollTo(0,0);render()});
+render();
+})();
+</script>
+
+</body></html>
